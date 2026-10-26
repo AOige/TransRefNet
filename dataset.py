@@ -63,8 +63,10 @@ class SegmentationDataset(Dataset):
         A.HorizontalFlip(p=0.3),
         A.VerticalFlip(p=0.3),
         A.CoarseDropout(
-            max_holes=10, max_height=32, max_width=32,
-            fill_value=0, mask_fill_value=0, p=0.3
+            num_holes_range=(1, 10),
+            hole_height_range=(1, 32),
+            hole_width_range=(1, 32),
+            fill=0, p=0.3
         ),
         A.ColorJitter(
             brightness=0.2, contrast=0.2,
@@ -156,6 +158,17 @@ def _paired_split(images, masks, ratios=(0.80, 0.10, 0.10), seed=SEED):
 # Per-dataset path discovery
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _find_dir(root, target_name):
+    """
+    Walk root looking for a subdirectory named target_name.
+    Returns the first match, or None.
+    """
+    for dirpath, dirnames, _ in os.walk(root):
+        if target_name in dirnames:
+            return os.path.join(dirpath, target_name)
+    return None
+
+
 def _collect_kvasir(root):
     """
     Expected layout after Kaggle download (debeshjha1/kvasirseg):
@@ -163,14 +176,18 @@ def _collect_kvasir(root):
         <root>/kvasir-seg/
             images/   *.jpg
             masks/    *.jpg        (same stem as images)
-    """
-    img_dir  = os.path.join(root, "kvasir-seg", "images")
-    mask_dir = os.path.join(root, "kvasir-seg", "masks")
 
-    if not os.path.isdir(img_dir):
-        # Some zips unpack without the kvasir-seg subfolder
-        img_dir  = os.path.join(root, "images")
-        mask_dir = os.path.join(root, "masks")
+    Searches recursively so double-nested zips
+    (kvasir-seg/kvasir-seg/...) are handled automatically.
+    """
+    img_dir  = _find_dir(root, "images")
+    mask_dir = _find_dir(root, "masks")
+
+    if img_dir is None or mask_dir is None:
+        raise FileNotFoundError(
+            f"Could not locate 'images' or 'masks' folder under {root}. "
+            f"Run download_data.py first."
+        )
 
     images = sorted(glob(os.path.join(img_dir,  "*.jpg")))
     masks  = sorted(glob(os.path.join(mask_dir, "*.jpg")))
@@ -189,13 +206,17 @@ def _collect_clinicdb(root):
         <root>/CVC-ClinicDB/
             Original/        *.png   (colonoscopy frames)
             Ground Truth/    *.png   (binary masks, same stem)
-    """
-    base     = os.path.join(root, "CVC-ClinicDB")
-    if not os.path.isdir(base):
-        base = root
 
-    img_dir  = os.path.join(base, "Original")
-    mask_dir = os.path.join(base, "Ground Truth")
+    Searches recursively to handle any zip nesting depth.
+    """
+    img_dir  = _find_dir(root, "Original")
+    mask_dir = _find_dir(root, "Ground Truth")
+
+    if img_dir is None or mask_dir is None:
+        raise FileNotFoundError(
+            f"Could not locate 'Original' or 'Ground Truth' folder under {root}. "
+            f"Run download_data.py first."
+        )
 
     images = sorted(glob(os.path.join(img_dir,  "*.png")))
     masks  = sorted(glob(os.path.join(mask_dir, "*.png")))
@@ -219,13 +240,16 @@ def _collect_isic2018(root):
 
     We use the training split only (2 594 images) and make our own
     80/10/10 split so all experiments are comparable.
+    Searches recursively to handle any zip nesting depth.
     """
-    base    = os.path.join(root, "ISIC2018")
-    if not os.path.isdir(base):
-        base = root
+    img_dir  = _find_dir(root, "ISIC2018_Task1-2_Training_Input")
+    mask_dir = _find_dir(root, "ISIC2018_Task1_Training_GroundTruth")
 
-    img_dir  = os.path.join(base, "ISIC2018_Task1-2_Training_Input")
-    mask_dir = os.path.join(base, "ISIC2018_Task1_Training_GroundTruth")
+    if img_dir is None or mask_dir is None:
+        raise FileNotFoundError(
+            f"Could not locate ISIC 2018 training folders under {root}. "
+            f"Run download_data.py first."
+        )
 
     images_raw = sorted(glob(os.path.join(img_dir, "*.jpg")))
 
