@@ -1,0 +1,55 @@
+# ─── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ─── Virtual environments ────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─── Jupyter ─────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ─── Datasets (never commit raw data) ────────────────────────────────────────
+data/
+*.zip
+*.tar.gz
+*.tgz
+
+# ─── Checkpoints and model weights ───────────────────────────────────────────
+checkpoints/
+files/
+*.pth
+*.pt
+*.ckpt
+*.h5
+
+# ─── Predictions / outputs ───────────────────────────────────────────────────
+predictions/
+results/
+outputs/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+*.txt
+!requirements.txt
+
+# ─── Kaggle credentials (never commit these) ─────────────────────────────────
+kaggle.json
+.kaggle/
+
+# ─── OS / editor ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
