@@ -132,7 +132,7 @@ def main():
 
     # Load checkpoint
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    ckpt   = torch.load(args.checkpoint, map_location=device)
+    ckpt   = torch.load(args.checkpoint, map_location=device, weights_only=False)
     saved_args = ckpt.get("args", {})
 
     # Determine architecture from checkpoint metadata; fall back to CLI arg
@@ -151,8 +151,10 @@ def main():
                    f"Architecture: {model_name}")
     print_and_save(summary_path,
                    f"Checkpoint epoch: {ckpt.get('epoch', 'N/A')}")
+    val_f1_ckpt = ckpt.get('val_f1', None)
+    val_f1_str  = f"{val_f1_ckpt:.4f}" if val_f1_ckpt is not None else "N/A"
     print_and_save(summary_path,
-                   f"Best val F1 (train): {ckpt.get('val_f1', 'N/A'):.4f}\n")
+                   f"Best val F1 (train): {val_f1_str}\n")
 
     # Data loaders — only test split is used
     img_size = (args.img_size, args.img_size)

@@ -126,7 +126,7 @@ def evaluate_epoch(model, loader, loss_fn, device):
 
 def _batch_metrics(y_true, y_pred):
     """Compute mean metrics over a batch."""
-    batch_jac = batch_f1 = batch_rec = batch_prec = []
+    batch_jac, batch_f1, batch_rec, batch_prec = [], [], [], []
     for yt, yp in zip(y_true, y_pred):
         scores = calculate_metrics(yt, yp)
         batch_jac.append(scores[0])
