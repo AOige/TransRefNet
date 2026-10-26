@@ -8,7 +8,6 @@ Supported datasets
   kvasir     : Kvasir-SEG polyp segmentation (1 000 images)
   clinicdb   : CVC-ClinicDB polyp segmentation (612 images)
   isic2018   : ISIC 2018 Task 1 skin-lesion segmentation (2 594 images)
-  dsb2018    : 2018 Data Science Bowl nucleus segmentation (~670 samples)
 
 Usage
 -----
@@ -243,82 +242,6 @@ def _collect_isic2018(root):
     return images, masks
 
 
-def _collect_dsb2018(root):
-    """
-    Expected layout after DSB 2018 Kaggle download
-    (competition: data-science-bowl-2018):
-
-        <root>/stage1_train/
-            {sample_id}/
-                images/   one *.png
-                masks/    one or more *.png  (individual nucleus masks)
-
-    We merge all nucleus masks per sample into a single binary mask
-    saved in <root>/dsb2018_merged_masks/.
-    Call prepare_dsb2018(root) once before training to create the merged masks.
-    """
-    img_paths  = sorted(
-        glob(os.path.join(root, "stage1_train", "*", "images", "*.png"))
-    )
-    mask_dir   = os.path.join(root, "dsb2018_merged_masks")
-    mask_paths = []
-
-    for ip in img_paths:
-        sample_id  = ip.split(os.sep)[-3]
-        mask_path  = os.path.join(mask_dir, sample_id + ".png")
-        mask_paths.append(mask_path)
-
-    if not all(os.path.exists(m) for m in mask_paths):
-        raise RuntimeError(
-            "DSB 2018 merged masks not found. "
-            "Run prepare_dsb2018(root) first."
-        )
-
-    assert len(img_paths) > 0, f"No DSB 2018 images found under {root}"
-    return img_paths, mask_paths
-
-
-def prepare_dsb2018(root):
-    """
-    One-time preprocessing step for DSB 2018.
-
-    Merges per-nucleus binary masks into a single mask per sample
-    and saves them to <root>/dsb2018_merged_masks/.
-
-    Call this once after downloading the dataset, before training.
-    """
-    out_dir = os.path.join(root, "dsb2018_merged_masks")
-    os.makedirs(out_dir, exist_ok=True)
-
-    sample_dirs = sorted(glob(os.path.join(root, "stage1_train", "*")))
-    print(f"Merging masks for {len(sample_dirs)} DSB 2018 samples...")
-
-    for i, sample_dir in enumerate(sample_dirs):
-        sample_id  = os.path.basename(sample_dir)
-        mask_files = glob(os.path.join(sample_dir, "masks", "*.png"))
-
-        if not mask_files:
-            print(f"  [WARN] No masks for sample {sample_id}, skipping.")
-            continue
-
-        # Read first mask to get spatial dimensions
-        combined = cv2.imread(mask_files[0], cv2.IMREAD_GRAYSCALE)
-        combined = (combined > 0).astype(np.uint8)
-
-        for mf in mask_files[1:]:
-            m = cv2.imread(mf, cv2.IMREAD_GRAYSCALE)
-            combined = np.maximum(combined, (m > 0).astype(np.uint8))
-
-        combined = (combined * 255).astype(np.uint8)
-        out_path = os.path.join(out_dir, sample_id + ".png")
-        cv2.imwrite(out_path, combined)
-
-        if (i + 1) % 100 == 0:
-            print(f"  {i + 1}/{len(sample_dirs)} done")
-
-    print(f"Merged masks saved to: {out_dir}")
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Public factory
 # ─────────────────────────────────────────────────────────────────────────────
@@ -327,7 +250,6 @@ _COLLECTORS = {
     "kvasir":   _collect_kvasir,
     "clinicdb": _collect_clinicdb,
     "isic2018": _collect_isic2018,
-    "dsb2018":  _collect_dsb2018,
 }
 
 DATASET_NAMES = list(_COLLECTORS.keys())

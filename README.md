@@ -65,7 +65,6 @@ TransRefNet/
 | [Kvasir-SEG](https://datasets.simula.no/kvasir-seg/) | Polyp segmentation | 1 000 | 800 / 100 / 100 |
 | [CVC-ClinicDB](https://www.kaggle.com/datasets/balraj98/cvcclinicdb) | Polyp segmentation | 612 | 489 / 61 / 62 |
 | [ISIC 2018 Task 1](https://challenge.isic-archive.com/landing/2018/) | Skin lesion segmentation | 2 594 | 2 075 / 259 / 260 |
-| [DSB 2018](https://www.kaggle.com/c/data-science-bowl-2018) | Nucleus segmentation | ~670 | ~536 / ~67 / ~67 |
 
 All splits are generated with `seed=42` and are consistent across ConvSegNet and TransRefNet runs.
 
@@ -99,22 +98,14 @@ chmod 600 ~/.kaggle/kaggle.json
 ### 4 — Download datasets
 
 ```bash
-# Download all four datasets
+# Download all three datasets
 python download_data.py --data_root ./data --dataset all
 
 # Or one at a time
 python download_data.py --data_root ./data --dataset kvasir
 python download_data.py --data_root ./data --dataset clinicdb
 python download_data.py --data_root ./data --dataset isic2018
-python download_data.py --data_root ./data --dataset dsb2018
 ```
-
-> **DSB 2018 — extra step:** The competition stores one mask per nucleus.  Run this once to merge them into single binary masks before training:
->
-> ```python
-> from dataset import prepare_dsb2018
-> prepare_dsb2018("./data")
-> ```
 
 ---
 
@@ -148,13 +139,7 @@ download_all(f"{BASE}/data")
 ```
 
 ```python
-# Cell 4 — Merge DSB 2018 nucleus masks (run once)
-from dataset import prepare_dsb2018
-prepare_dsb2018(f"{BASE}/data")
-```
-
-```python
-# Cell 5 — Train TransRefNet on Kvasir-SEG
+# Cell 4 — Train TransRefNet on Kvasir-SEG
 !python train.py \
     --model      transrefnet \
     --dataset    kvasir \
@@ -165,7 +150,7 @@ prepare_dsb2018(f"{BASE}/data")
 ```
 
 ```python
-# Cell 6 — Train the ConvSegNet baseline for comparison
+# Cell 5 — Train the ConvSegNet baseline for comparison
 !python train.py \
     --model      convsegnet \
     --dataset    kvasir \
@@ -176,7 +161,7 @@ prepare_dsb2018(f"{BASE}/data")
 ```
 
 ```python
-# Cell 7 — Evaluate on the test split
+# Cell 6 — Evaluate on the test split
 !python test.py \
     --checkpoint {BASE}/checkpoints/transrefnet_kvasir/best_checkpoint.pth \
     --dataset    kvasir \
@@ -226,9 +211,9 @@ Four standard metrics are reported for every dataset:
 ## Running All Experiments
 
 ```bash
-# Run all eight experiments (4 datasets × 2 models)
+# Run all six experiments (3 datasets × 2 models)
 for MODEL in transrefnet convsegnet; do
-  for DATASET in kvasir clinicdb isic2018 dsb2018; do
+  for DATASET in kvasir clinicdb isic2018; do
     python train.py \
       --model      $MODEL \
       --dataset    $DATASET \
@@ -243,7 +228,7 @@ Evaluate all:
 
 ```bash
 for MODEL in transrefnet convsegnet; do
-  for DATASET in kvasir clinicdb isic2018 dsb2018; do
+  for DATASET in kvasir clinicdb isic2018; do
     python test.py \
       --checkpoint ./checkpoints/${MODEL}_${DATASET}/best_checkpoint.pth \
       --dataset    $DATASET \
@@ -295,17 +280,9 @@ data/
 │   ├── Original/         *.png
 │   └── Ground Truth/     *.png
 │
-├── ISIC2018/
-│   ├── ISIC2018_Task1-2_Training_Input/        *.jpg
-│   └── ISIC2018_Task1_Training_GroundTruth/    *_segmentation.png
-│
-├── stage1_train/
-│   └── {sample_id}/
-│       ├── images/       *.png
-│       └── masks/        *.png   (per-nucleus)
-│
-└── dsb2018_merged_masks/
-    └── {sample_id}.png           (created by prepare_dsb2018)
+└── ISIC2018/
+    ├── ISIC2018_Task1-2_Training_Input/        *.jpg
+    └── ISIC2018_Task1_Training_GroundTruth/    *_segmentation.png
 ```
 
 ---

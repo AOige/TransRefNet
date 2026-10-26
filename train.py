@@ -18,7 +18,7 @@ Usage — Google Colab
         --batch_size 8
 
 Supported models   : transrefnet, convsegnet
-Supported datasets : kvasir, clinicdb, isic2018, dsb2018
+Supported datasets : kvasir, clinicdb, isic2018
 """
 
 import os

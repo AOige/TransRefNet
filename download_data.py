@@ -1,7 +1,7 @@
 """
 download_data.py
 ----------------
-Downloads all four TransRefNet datasets to a common data root directory.
+Downloads all three TransRefNet datasets to a common data root directory.
 
 Requirements
 ------------
@@ -25,7 +25,6 @@ Individual downloads
     python download_data.py --data_root ./data --dataset kvasir
     python download_data.py --data_root ./data --dataset clinicdb
     python download_data.py --data_root ./data --dataset isic2018
-    python download_data.py --data_root ./data --dataset dsb2018
 """
 
 import os
@@ -154,53 +153,6 @@ def download_isic2018(data_root: str):
     print(f"[isic2018] Saved to: {out_dir}")
 
 
-def download_dsb2018(data_root: str):
-    """
-    2018 Data Science Bowl — ~670 microscopy nuclei samples
-    Kaggle competition: data-science-bowl-2018
-
-    Note: Requires accepting the competition rules on Kaggle first.
-    Visit https://www.kaggle.com/c/data-science-bowl-2018 and click
-    'Late Submission' to accept terms, then run this download.
-
-    Final layout:
-        <data_root>/stage1_train/{sample_id}/{images,masks}/
-
-    After downloading, run:
-        from dataset import prepare_dsb2018
-        prepare_dsb2018("<data_root>")
-    to merge per-nucleus masks into single binary masks.
-    """
-    out_dir = os.path.join(data_root, "stage1_train")
-    if _already_downloaded(out_dir, min_files=500):
-        print("[dsb2018] Already downloaded, skipping.")
-        return
-
-    os.makedirs(data_root, exist_ok=True)
-    _run(
-        f"kaggle competitions download -c data-science-bowl-2018 "
-        f"--path {data_root}",
-        cwd=data_root
-    )
-
-    # The competition download is a zip of zips
-    zip_path = os.path.join(data_root, "data-science-bowl-2018.zip")
-    if os.path.exists(zip_path):
-        _unzip(zip_path, data_root)
-
-    # Unzip stage1_train if it's still zipped
-    stage1_zip = os.path.join(data_root, "stage1_train.zip")
-    if os.path.exists(stage1_zip):
-        _unzip(stage1_zip, data_root)
-
-    print(f"[dsb2018] Saved to: {out_dir}")
-    print(
-        "\n[dsb2018] Next step: run prepare_dsb2018() to merge nucleus masks.\n"
-        "  from dataset import prepare_dsb2018\n"
-        f"  prepare_dsb2018('{data_root}')\n"
-    )
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -217,12 +169,11 @@ _DOWNLOADERS = {
     "kvasir":   download_kvasir,
     "clinicdb": download_clinicdb,
     "isic2018": download_isic2018,
-    "dsb2018":  download_dsb2018,
 }
 
 
 def download_all(data_root: str):
-    """Download all four datasets to data_root."""
+    """Download all three datasets to data_root."""
     for name, fn in _DOWNLOADERS.items():
         print(f"\n{'='*55}")
         print(f"  Downloading: {name.upper()}")
