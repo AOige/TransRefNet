@@ -230,30 +230,44 @@ def _collect_clinicdb(root):
 
 def _collect_isic2018(root):
     """
-    Expected layout after ISIC 2018 download:
+    Locates ISIC 2018 Task 1 images and masks regardless of the folder
+    names used by the Kaggle mirror.
 
-        <root>/ISIC2018/
-            ISIC2018_Task1-2_Training_Input/
-                ISIC_xxxxxxxx.jpg
-            ISIC2018_Task1_Training_GroundTruth/
-                ISIC_xxxxxxxx_segmentation.png
+    Strategy: walk root and find the first directory that contains files
+    matching ISIC_*.jpg (images) and the first that contains files matching
+    *_segmentation.png (masks).  Then pair them by stem.
 
-    We use the training split only (2 594 images) and make our own
-    80/10/10 split so all experiments are comparable.
-    Searches recursively to handle any zip nesting depth.
+    Works with both the official ISIC archive layout
+    (ISIC2018_Task1-2_Training_Input / ISIC2018_Task1_Training_GroundTruth)
+    and any Kaggle mirror that reorganises the same files.
     """
-    img_dir  = _find_dir(root, "ISIC2018_Task1-2_Training_Input")
-    mask_dir = _find_dir(root, "ISIC2018_Task1_Training_GroundTruth")
+    img_dir  = None
+    mask_dir = None
+
+    for dirpath, dirnames, filenames in os.walk(root):
+        if img_dir is None:
+            jpg_isic = [f for f in filenames
+                        if f.startswith("ISIC_") and f.endswith(".jpg")]
+            if len(jpg_isic) > 10:          # at least a handful of images
+                img_dir = dirpath
+        if mask_dir is None:
+            seg_pngs = [f for f in filenames if f.endswith("_segmentation.png")]
+            if len(seg_pngs) > 10:
+                mask_dir = dirpath
+        if img_dir and mask_dir:
+            break
 
     if img_dir is None or mask_dir is None:
         raise FileNotFoundError(
-            f"Could not locate ISIC 2018 training folders under {root}. "
-            f"Run download_data.py first."
+            f"Could not locate ISIC 2018 image/mask folders under {root}. "
+            f"Run download_data.py first.\n"
+            f"  img_dir found:  {img_dir}\n"
+            f"  mask_dir found: {mask_dir}"
         )
 
-    images_raw = sorted(glob(os.path.join(img_dir, "*.jpg")))
+    images_raw = sorted(glob(os.path.join(img_dir, "ISIC_*.jpg")))
 
-    # Build mask path from image stem
+    # Pair each image with its mask via stem + _segmentation.png
     images, masks = [], []
     for img_path in images_raw:
         stem      = os.path.splitext(os.path.basename(img_path))[0]
@@ -262,7 +276,11 @@ def _collect_isic2018(root):
             images.append(img_path)
             masks.append(mask_path)
 
-    assert len(images) > 0, f"No ISIC 2018 images found under {root}"
+    assert len(images) > 0, (
+        f"No paired ISIC 2018 images found.\n"
+        f"  images dir: {img_dir}  ({len(images_raw)} .jpg files)\n"
+        f"  masks  dir: {mask_dir}"
+    )
     return images, masks
 
 
