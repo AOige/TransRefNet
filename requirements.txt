@@ -1,0 +1,29 @@
+# TransRefNet — Python dependencies
+# Install with:  pip install -r requirements.txt
+#
+# Google Colab ships with most of these already; run the following cell
+# to install only the missing ones:
+#   !pip install -q albumentations ptflops kaggle
+
+# Core deep learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Image processing
+opencv-python>=4.7.0
+Pillow>=9.5.0
+albumentations>=1.3.0
+
+# Numerical / utilities
+numpy>=1.24.0
+scikit-learn>=1.2.0
+
+# Model complexity reporting (optional — used by model.py __main__)
+ptflops>=0.6.9
+
+# Dataset download via Kaggle API
+kaggle>=1.5.12
+
+# Notebook / experiment support (Colab already provides these)
+tqdm>=4.65.0
+matplotlib>=3.7.0
